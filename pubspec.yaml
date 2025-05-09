@@ -1,0 +1,48 @@
+name: flutter_application_3
+description: Aplicación de venta de termos en Flutter
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.7.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.3
+  cloud_firestore: ^5.6.7
+  provider: ^6.1.5
+  flutter_lints: ^5.0.0
+  firebase_storage: ^12.4.5  # ✅ Ahora está correctamente indentado
+  firebase_data_connect: ^0.1.4+1
+  http: ^1.4.0
+  carousel_slider: ^5.0.0
+  image_picker: ^1.1.2
+  shared_preferences: ^2.0.13
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/carrusel1.jpg
+    - assets/images/carrusel2.jpg
+    - assets/images/carrusel3.jpg
+    - assets/images/termo_banner.png
+    - assets/images/azul.png
+    - assets/images/rojo.jpg
+    - assets/images/verde.jpg
+    - assets/images/amarillo.jpg
+    - assets/images/cafe.jpg    
+    - assets/images/rosa.jpg
+    - assets/images/morado.jpg
+    - assets/images/naranja.jpg
+    - assets/images/negro.jpg
+    - assets/images/tornasolch.jpg
+    - assets/images/flores.jpg
+    - assets/images/personalisadoNom.jpg
