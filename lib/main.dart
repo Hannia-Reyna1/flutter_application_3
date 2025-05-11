@@ -25,12 +25,16 @@ class TermoApp extends StatelessWidget {
     debugPrint('🔹 Construyendo la aplicación...');
 
     return MaterialApp(
+      debugShowCheckedModeBanner: false, // ✅ Desactiva el banner de debug/
       title: 'Venta de Termos',
       theme: ThemeData(primarySwatch: Colors.blue),
       initialRoute: '/home',
       routes: <String, WidgetBuilder>{
         '/home': (BuildContext context) => HomeScreen(),
-        '/cart': (BuildContext context) => CartScreen(carrito: <Map<String, dynamic>>[]), // ✅ El carrito se mantiene accesible
+        '/cart':
+            (BuildContext context) => CartScreen(
+              carrito: <Map<String, dynamic>>[],
+            ), // ✅ El carrito se mantiene accesible
       },
     );
   }
