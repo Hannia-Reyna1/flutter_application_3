@@ -3,27 +3,29 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'dart:developer'; // Import for the log function
 import 'cart_screen.dart';
-import 'package:provider/provider.dart'; // Import the provider package
 import 'auth_screen.dart';
-import '../services/cart_providers.dart'; // Import the CartProvider
 import 'profile_screen.dart';
-
-
+import 'package:provider/provider.dart'; // Ensure Provider package is imported
+import '../services/cart_provider.dart'; // Import your CartProvider
 
 class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  HomeScreenState createState() => HomeScreenState();
 }
 
 // Removed duplicate _HomeScreenState class definition
-  class _HomeScreenState extends State<HomeScreen> {
+  class HomeScreenState extends State<HomeScreen> {
     User? user = FirebaseAuth.instance.currentUser; // ✅ Ahora se actualizará dinámicamente
-    final List<Map<String, dynamic>> carrito = <Map<String, dynamic>>[];
-  
+   late CartProvider cartProvider; // Declare cartProvider without initializing it
+    final List<Map<String, dynamic>> carrito = []; // ✅ Define and initialize carrito
     @override
     void initState() {
       super.initState();
+      cartProvider = Provider.of<CartProvider>(context, listen: false); // Initialize cartProvider here
       FirebaseAuth.instance.authStateChanges().listen((User? usuario) {
         setState(() {
           user = usuario; // ✅ Se actualiza automáticamente al iniciar/cerrar sesión
@@ -41,29 +43,30 @@ void guardarCarrito() async {
 void cargarCarrito() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   final String? carritoGuardado = prefs.getString('carrito');
-
+  log('Contenido en SharedPreferences: $carritoGuardado');
   if (carritoGuardado != null) {
     setState(() {
       carrito.clear();
       carrito.addAll(List<Map<String, dynamic>>.from(jsonDecode(carritoGuardado)));
     });
+    log('Carrito después de cargar: $carrito'); // ✅ Confirma que los productos se cargaron correctamente
   }
 }
 
 // ✅ Modifica `_verCarrito()` para siempre usar los datos actualizados
 void _verCarrito() {
   cargarCarrito(); // ✅ Asegura que el carrito tenga la última versión guardada
+  log('Carrito antes de abrir CartScreen: $carrito'); // ✅ Verifica el estado del carrito
 
   if (carrito.isNotEmpty) {
-    Navigator.push<void>(
+    Navigator.push(
       context,
-      MaterialPageRoute<void>(builder: (BuildContext context) => CartScreen(carrito: carrito)),
+      MaterialPageRoute<void>(builder: (BuildContext context) => CartScreen()), // ✅ Eliminamos el parámetro `carrito`
     );
   } else {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('❌ El carrito está vacío')));
   }
 }
-
 // ✅ Modifica `vaciarCarrito()` para eliminar el carrito también en almacenamiento persistente
 void vaciarCarrito() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -73,7 +76,9 @@ void vaciarCarrito() async {
   });
 
   prefs.remove('carrito'); // ✅ Elimina la versión guardada del carrito
-  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Carrito vacío')));
+  if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✅ Carrito vacío')));
+  }
 }
   void _abrirAuthScreen() {
     Navigator.push(
@@ -103,27 +108,36 @@ void vaciarCarrito() async {
     Stack(
       children: <Widget>[
         IconButton(icon: const Icon(Icons.shopping_cart), onPressed: _verCarrito),
-        if (carrito.isNotEmpty)
-          Positioned(
-            right: 8,
-            top: 8,
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-              child: Text('${carrito.length}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            ),
-          ),
+        Consumer<CartProvider>(
+          builder: (context, cartProvider, child) {
+            return cartProvider.carrito.isNotEmpty
+                ? Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                      child: Text('${cartProvider.carrito.length}', style: const TextStyle(color: Color.fromARGB(255, 195, 41, 215), fontWeight: FontWeight.bold)),
+                    ),
+                  )
+                : const SizedBox();
+          },
+        ),
       ],
     ),
   ],
 ),
-      body: Column(
+  body: Builder(
+    builder: (BuildContext context) {
+      return Column(
         children: <Widget>[
           _mostrarCarrusel(),
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
           Expanded(child: _mostrarProductos()),
         ],
-      ),
+      );
+    },
+  ),
     );
   }
 
@@ -138,18 +152,18 @@ void vaciarCarrito() async {
       children: <Widget>[
         Container(
           padding: const EdgeInsets.all(10),
-          child: const Text('Online Thermos', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 163, 26, 201))),
+          child: const Text('Online Thermos', style: TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Color.fromARGB(255, 163, 26, 201))),
         ),
         CarouselSlider(
           options: CarouselOptions(
-            height: 250,
+            height: 150,
             autoPlay: true,
             enlargeCenterPage: true,
           ),
           items: imagenesCarrusel.map((String imgPath) {
             return Container(
               width: double.infinity,
-              height: 250,
+              height: 150,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 image: DecorationImage(image: AssetImage(imgPath), fit: BoxFit.contain),
@@ -161,18 +175,17 @@ void vaciarCarrito() async {
     );
   }
 
-  void _agregarAlCarrito(Map<String, dynamic> producto) {
+ void _agregarAlCarrito(Map<String, dynamic> producto) {
   final cartProvider = Provider.of<CartProvider>(context, listen: false);
   cartProvider.agregarProducto(producto); // ✅ Guarda el producto en el estado global
   
   debugPrint("🛒 Producto agregado: ${producto['nombre']}");
-  debugPrint('📦 Estado actual del carrito: ${cartProvider.carrito}');
+  debugPrint("📦 Estado actual del carrito: ${cartProvider.carrito}");
 
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(content: Text('${producto['nombre']} añadido al carrito')),
   );
 }
-
   Widget _mostrarProductos() {
     final List<Map<String, dynamic>> productos = <Map<String, dynamic>>[
       <String, dynamic>{'nombre': 'Termo Azul', 'precio': 250.0, 'imagen': 'assets/images/azul.png', 'cantidad': 1},
@@ -192,7 +205,7 @@ void vaciarCarrito() async {
     return GridView.builder(
       padding: const EdgeInsets.all(8),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3, // ✅ Muestra 3 productos por fila
+        crossAxisCount: 2, // ✅ Muestra 3 productos por fila
         crossAxisSpacing: 8, // ✅ Espaciado horizontal entre productos
         mainAxisSpacing: 8, // ✅ Espaciado vertical entre filas
         childAspectRatio: 0.85, // ✅ Ajuste proporcional de cada producto
@@ -202,12 +215,12 @@ void vaciarCarrito() async {
         final Map<String, dynamic> producto = productos[index];
         return Card(
           elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3)),
           child: Column(
             children: <Widget>[
               Container(
-                width: 120,
-                height: 120,
+                width: 80,
+                height: 80,
                 padding: const EdgeInsets.all(8),
                 child: Image.asset(
                   producto['imagen']!,
@@ -222,7 +235,7 @@ void vaciarCarrito() async {
                 child: Column(
                   children: <Widget>[
                     Text(producto['nombre']!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                    Text('\$${producto['precio']}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    Text('\$${producto['precio']}', style: const TextStyle(fontSize: 12, color: Color.fromARGB(255, 158, 20, 228))),
                   ],
                 ),
               ),
@@ -234,3 +247,4 @@ void vaciarCarrito() async {
     );
   }
 }
+// Removed redundant and incomplete Scaffold widget
