@@ -1,4 +1,7 @@
 {
     "cmake.sourceDirectory": "/home/eric/flutter_application_3/flutter_application_3/linux",
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "files.associations": {
+        "plyconfig.json": "jsonc"
+    }
 }

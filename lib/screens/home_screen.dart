@@ -4,8 +4,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'cart_screen.dart';
+import 'package:provider/provider.dart'; // Import the provider package
 import 'auth_screen.dart';
+import '../services/cart_providers.dart'; // Import the CartProvider
 import 'profile_screen.dart';
+
+
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -158,12 +162,16 @@ void vaciarCarrito() async {
   }
 
   void _agregarAlCarrito(Map<String, dynamic> producto) {
-    setState(() {
-      carrito.add(producto);
-    });
-    guardarCarrito(); // Save the updated cart persistently
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${producto['nombre']} añadido al carrito')));
-  }
+  final cartProvider = Provider.of<CartProvider>(context, listen: false);
+  cartProvider.agregarProducto(producto); // ✅ Guarda el producto en el estado global
+  
+  debugPrint("🛒 Producto agregado: ${producto['nombre']}");
+  debugPrint('📦 Estado actual del carrito: ${cartProvider.carrito}');
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('${producto['nombre']} añadido al carrito')),
+  );
+}
 
   Widget _mostrarProductos() {
     final List<Map<String, dynamic>> productos = <Map<String, dynamic>>[
